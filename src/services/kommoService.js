@@ -82,6 +82,8 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
     const searchUrl = `${config.kommo.baseUrl}/contacts?query=${telefonoLimpio}`;
     let finalContactId = null;
 
+    console.log('🔍 Buscando contacto existente con teléfono:', telefono);
+
     const searchResponse = await axios.get(searchUrl, {
       headers: {
         'Authorization': `Bearer ${config.kommo.accessToken}`,
@@ -105,6 +107,7 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
 
             if (normalizedFieldPhone === normalizedInputPhone) {
               finalContactId = contact.id;
+              console.log('✅ Contacto encontrado, ID:', finalContactId);
               break;
             }
           }
@@ -115,19 +118,31 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
 
     // Si no existe, crear el contacto
     if (!finalContactId) {
+      console.log('📝 Creando nuevo contacto...');
+      
+      // Filtrar solo campos de contacto que no estén vacíos
+      const contactCustomFields = [];
+      
+      if (telefono) {
+        contactCustomFields.push({
+          field_id: config.customFields.contact.phone,
+          values: [{ value: telefono }],
+        });
+      }
+      
+      if (email) {
+        contactCustomFields.push({
+          field_id: config.customFields.contact.email,
+          values: [{ value: email }],
+        });
+      }
+
       const contactData = [{
-        name: nombre,
-        custom_fields_values: [
-          {
-            field_id: config.customFields.contact.phone,
-            values: [{ value: telefono }],
-          },
-          {
-            field_id: config.customFields.contact.email,
-            values: [{ value: email }],
-          }
-        ],
+        name: nombre || 'Sin nombre',
+        custom_fields_values: contactCustomFields,
       }];
+
+      console.log('📤 Enviando datos del contacto:', JSON.stringify(contactData, null, 2));
 
       const createContactResponse = await axios.post(
         `${config.kommo.baseUrl}/contacts`,
@@ -141,8 +156,14 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
         }
       );
 
+      if (createContactResponse.status !== 200) {
+        console.error('❌ Error al crear contacto:', createContactResponse.data);
+        return;
+      }
+
       const contactResponseData = createContactResponse.data;
       finalContactId = contactResponseData?._embedded?.contacts?.[0]?.id;
+      console.log('✅ Contacto creado, ID:', finalContactId);
     }
 
     if (!finalContactId) {
@@ -151,25 +172,55 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
     }
 
     // 3️⃣ Crear el lead usando el contacto encontrado/creado
-    const customFieldsValues = [
-      ...(fechaISO ? [{ field_id: config.customFields.lead.fechaCita, values: [{ value: fechaISO }] }] : []),
-      ...(linkMeet ? [{ field_id: config.customFields.lead.linkMeet, values: [{ value: linkMeet }] }] : []),
-      ...(tema ? [{ field_id: config.customFields.lead.tema, values: [{ value: tema }] }] : []),
-      ...(telefono ? [{ field_id: config.customFields.lead.telefono, values: [{ value: telefono }] }] : []),
-      ...(email ? [{ field_id: config.customFields.lead.email, values: [{ value: email }] }] : []),
-      ...(nombre ? [{ field_id: config.customFields.lead.nombre, values: [{ value: nombre }] }] : []),
-      ...(nameAsegurado ? [{ field_id: config.customFields.lead.nombreAsegurado, values: [{ value: nameAsegurado }] }] : []),
-      ...(phoneAsegurado ? [{ field_id: config.customFields.lead.telefonoAsegurado, values: [{ value: phoneAsegurado }] }] : []),
-    ];
+    console.log('📝 Creando lead con los siguientes datos:');
+    console.log('   - Nombre:', nombre);
+    console.log('   - Email:', email);
+    console.log('   - Teléfono:', telefono);
+    console.log('   - Tema:', tema);
+    console.log('   - Fecha:', fechaISO);
+    console.log('   - Link Meet:', linkMeet);
+    console.log('   - Etapa ID:', idEtapa);
+    console.log('   - Nombre Asegurado:', nameAsegurado);
+    console.log('   - Teléfono Asegurado:', phoneAsegurado);
+
+    // Filtrar campos vacíos, undefined o null
+    const customFieldsValues = [];
+    
+    if (fechaISO) {
+      customFieldsValues.push({ field_id: config.customFields.lead.fechaCita, values: [{ value: fechaISO }] });
+    }
+    if (linkMeet) {
+      customFieldsValues.push({ field_id: config.customFields.lead.linkMeet, values: [{ value: linkMeet }] });
+    }
+    if (tema) {
+      customFieldsValues.push({ field_id: config.customFields.lead.tema, values: [{ value: tema }] });
+    }
+    if (telefono) {
+      customFieldsValues.push({ field_id: config.customFields.lead.telefono, values: [{ value: telefono }] });
+    }
+    if (email) {
+      customFieldsValues.push({ field_id: config.customFields.lead.email, values: [{ value: email }] });
+    }
+    if (nombre) {
+      customFieldsValues.push({ field_id: config.customFields.lead.nombre, values: [{ value: nombre }] });
+    }
+    if (nameAsegurado) {
+      customFieldsValues.push({ field_id: config.customFields.lead.nombreAsegurado, values: [{ value: nameAsegurado }] });
+    }
+    if (phoneAsegurado) {
+      customFieldsValues.push({ field_id: config.customFields.lead.telefonoAsegurado, values: [{ value: phoneAsegurado }] });
+    }
 
     const leadPayload = [{
-      name: `Asesoría - ${nombre}`,
+      name: `Asesoría - ${nombre || 'Sin nombre'}`,
       status_id: idEtapa,
       _embedded: {
         contacts: [{ id: finalContactId }]
       },
-      custom_fields_values: customFieldsValues
+      ...(customFieldsValues.length > 0 && { custom_fields_values: customFieldsValues })
     }];
+
+    console.log('📤 Enviando payload del lead:', JSON.stringify(leadPayload, null, 2));
 
     const response = await axios.post(
       `${config.kommo.baseUrl}/leads/complex`,
@@ -183,9 +234,17 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
       }
     );
 
-    console.log('🆕 Lead creado o vinculado:', response.data);
+    if (response.status === 200) {
+      console.log('🆕 ✅ Lead creado exitosamente:', response.data);
+    } else {
+      console.error('❌ Error al crear lead. Status:', response.status);
+      console.error('📋 Respuesta:', JSON.stringify(response.data, null, 2));
+    }
   } catch (err) {
     console.error('❌ Error en crearLeadNuevo:', err.message);
+    if (err.response) {
+      console.error('📋 Detalles del error:', JSON.stringify(err.response.data, null, 2));
+    }
   }
 }
 
@@ -194,23 +253,53 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
  */
 async function patchLead(leadId, nombre, email, telefono, tema, fechaISO, linkMeet, idEtapa, nameAsegurado, phoneAsegurado) {
   try {
-    const customFieldsValues = [
-      ...(fechaISO ? [{ field_id: config.customFields.lead.fechaCita, values: [{ value: fechaISO }] }] : []),
-      ...(linkMeet ? [{ field_id: config.customFields.lead.linkMeet, values: [{ value: linkMeet }] }] : []),
-      ...(tema ? [{ field_id: config.customFields.lead.tema, values: [{ value: tema }] }] : []),
-      ...(telefono ? [{ field_id: config.customFields.lead.telefono, values: [{ value: telefono }] }] : []),
-      ...(email ? [{ field_id: config.customFields.lead.email, values: [{ value: email }] }] : []),
-      ...(nombre ? [{ field_id: config.customFields.lead.nombre, values: [{ value: nombre }] }] : []),
-      ...(nameAsegurado ? [{ field_id: config.customFields.lead.nombreAsegurado, values: [{ value: nameAsegurado }] }] : []),
-      ...(phoneAsegurado ? [{ field_id: config.customFields.lead.telefonoAsegurado, values: [{ value: phoneAsegurado }] }] : []),
-    ];
+    console.log('📝 Actualizando lead ID:', leadId);
+    console.log('   - Nombre:', nombre);
+    console.log('   - Email:', email);
+    console.log('   - Teléfono:', telefono);
+    console.log('   - Tema:', tema);
+    console.log('   - Fecha:', fechaISO);
+    console.log('   - Link Meet:', linkMeet);
+    console.log('   - Etapa ID:', idEtapa);
+    console.log('   - Nombre Asegurado:', nameAsegurado);
+    console.log('   - Teléfono Asegurado:', phoneAsegurado);
+
+    // Filtrar campos vacíos, undefined o null
+    const customFieldsValues = [];
+    
+    if (fechaISO) {
+      customFieldsValues.push({ field_id: config.customFields.lead.fechaCita, values: [{ value: fechaISO }] });
+    }
+    if (linkMeet) {
+      customFieldsValues.push({ field_id: config.customFields.lead.linkMeet, values: [{ value: linkMeet }] });
+    }
+    if (tema) {
+      customFieldsValues.push({ field_id: config.customFields.lead.tema, values: [{ value: tema }] });
+    }
+    if (telefono) {
+      customFieldsValues.push({ field_id: config.customFields.lead.telefono, values: [{ value: telefono }] });
+    }
+    if (email) {
+      customFieldsValues.push({ field_id: config.customFields.lead.email, values: [{ value: email }] });
+    }
+    if (nombre) {
+      customFieldsValues.push({ field_id: config.customFields.lead.nombre, values: [{ value: nombre }] });
+    }
+    if (nameAsegurado) {
+      customFieldsValues.push({ field_id: config.customFields.lead.nombreAsegurado, values: [{ value: nameAsegurado }] });
+    }
+    if (phoneAsegurado) {
+      customFieldsValues.push({ field_id: config.customFields.lead.telefonoAsegurado, values: [{ value: phoneAsegurado }] });
+    }
 
     const leadPayload = [{
       id: leadId,
-      name: `Asesoría - ${nombre}`,
+      name: `Asesoría - ${nombre || 'Sin nombre'}`,
       status_id: idEtapa,
-      custom_fields_values: customFieldsValues
+      ...(customFieldsValues.length > 0 && { custom_fields_values: customFieldsValues })
     }];
+
+    console.log('📤 Enviando payload de actualización:', JSON.stringify(leadPayload, null, 2));
 
     const response = await axios.patch(
       `${config.kommo.baseUrl}/leads`,
@@ -224,9 +313,17 @@ async function patchLead(leadId, nombre, email, telefono, tema, fechaISO, linkMe
       }
     );
 
-    console.log('✅ Lead actualizado:', response.data);
+    if (response.status === 200) {
+      console.log('✅ Lead actualizado exitosamente:', response.data);
+    } else {
+      console.error('❌ Error al actualizar lead. Status:', response.status);
+      console.error('📋 Respuesta:', JSON.stringify(response.data, null, 2));
+    }
   } catch (err) {
     console.error('❌ Error en patchLead:', err.message);
+    if (err.response) {
+      console.error('📋 Detalles del error:', JSON.stringify(err.response.data, null, 2));
+    }
   }
 }
 
