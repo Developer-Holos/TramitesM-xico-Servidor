@@ -24,6 +24,11 @@ async function procesarWebhook(payload) {
   if (eventName === 'PROBLEMAS CON EL SEGURO SOCIAL') {
     await procesarEventoPension(payload);
   }
+
+  // Procesar evento de análisis de cálculo
+  if (eventName === 'Analisis de su Calculo y Proyeccion') {
+    await procesarEventoAnalisisCalculo(payload);
+  }
 }
 
 /**
@@ -103,6 +108,45 @@ async function procesarEventoPension(payload) {
   } else {
     console.log('⚠️ No se encontró lead, creando uno nuevo...');
     await crearLeadNuevo(nombre, email, telefono, '', fechaLocal, linkMeet, idEtapa, nameAsegurado, phoneAsegurado);
+  }
+}
+
+/**
+ * 📊 Procesa evento de análisis de cálculo y proyección
+ */
+async function procesarEventoAnalisisCalculo(payload) {
+  console.log('📋 === DATOS DE CALENDLY (ANÁLISIS CÁLCULO) ===');
+  console.log('Payload completo:', JSON.stringify(payload, null, 2));
+  console.log('Questions & Answers:', JSON.stringify(payload.questions_and_answers, null, 2));
+  
+  const nombre = payload.name;
+  const email = payload.email;
+  // Para este evento, el teléfono viene en location (outbound call)
+  const telefono = payload.scheduled_event.location?.location || payload.scheduled_event.location?.join_url;
+  const phoneAsegurado = payload.questions_and_answers.find(q => q.question === 'Telefono del Asegurado')?.answer;
+  const linkMeet = null; // No hay link de Meet, es llamada telefónica
+  const fecha = payload.scheduled_event.start_time;
+  const fechaLocal = formatoFechaKommo(fecha);
+  const idEtapa = config.pipelines.idEtapaAnalisisCalculo;
+
+  console.log('📊 Datos extraídos:');
+  console.log('  - Nombre:', nombre);
+  console.log('  - Email:', email);
+  console.log('  - Teléfono (de location):', telefono);
+  console.log('  - Teléfono asegurado:', phoneAsegurado);
+  console.log('  - Link Meet:', linkMeet);
+  console.log('  - Fecha local:', fechaLocal);
+  console.log('🔍 Buscando lead por teléfono:', telefono, '| Pipeline:', config.pipelines.idEmbudoPension);
+
+  // Buscar lead por teléfono en etapa específica
+  const leadIdEncontrado = await buscarLeadPorTelefono(telefono, config.pipelines.idEmbudoPension);
+
+  if (leadIdEncontrado) {
+    console.log('✅ Lead encontrado con ID:', leadIdEncontrado);
+    await patchLead(leadIdEncontrado, nombre, email, telefono, '', fechaLocal, linkMeet, idEtapa, '', phoneAsegurado);
+  } else {
+    console.log('⚠️ No se encontró lead, creando uno nuevo...');
+    await crearLeadNuevo(nombre, email, telefono, '', fechaLocal, linkMeet, idEtapa, '', phoneAsegurado);
   }
 }
 
