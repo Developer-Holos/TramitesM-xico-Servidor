@@ -1,0 +1,25 @@
+{
+  "name": "tramites-mexico-servidor",
+  "version": "1.0.0",
+  "description": "Servidor Node.js para webhooks de Calendly y integración con Kommo CRM",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "node test/test-webhook.js"
+  },
+  "keywords": ["calendly", "webhook", "kommo", "crm"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "morgan": "^1.10.0",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
