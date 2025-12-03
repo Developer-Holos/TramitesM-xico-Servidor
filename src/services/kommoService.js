@@ -142,8 +142,6 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
         custom_fields_values: contactCustomFields,
       }];
 
-      console.log('📤 Enviando datos del contacto:', JSON.stringify(contactData, null, 2));
-
       const createContactResponse = await axios.post(
         `${config.kommo.baseUrl}/contacts`,
         contactData,
@@ -220,7 +218,6 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
       ...(customFieldsValues.length > 0 && { custom_fields_values: customFieldsValues })
     }];
 
-    console.log('📤 Enviando payload del lead:', JSON.stringify(leadPayload, null, 2));
 
     const response = await axios.post(
       `${config.kommo.baseUrl}/leads/complex`,
@@ -235,10 +232,11 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
     );
 
     if (response.status === 200) {
-      console.log('🆕 ✅ Lead creado exitosamente:', response.data);
+      const leadId = response.data?._embedded?.leads?.[0]?.id;
+      console.log('🆕 ✅ Lead creado exitosamente, ID:', leadId);
     } else {
       console.error('❌ Error al crear lead. Status:', response.status);
-      console.error('📋 Respuesta:', JSON.stringify(response.data, null, 2));
+      console.error('📋 Respuesta:', response.data);
     }
   } catch (err) {
     console.error('❌ Error en crearLeadNuevo:', err.message);
@@ -253,16 +251,7 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
  */
 async function patchLead(leadId, nombre, email, telefono, tema, fechaISO, linkMeet, idEtapa, nameAsegurado, phoneAsegurado) {
   try {
-    console.log('📝 Actualizando lead ID:', leadId);
-    console.log('   - Nombre:', nombre);
-    console.log('   - Email:', email);
-    console.log('   - Teléfono:', telefono);
-    console.log('   - Tema:', tema);
-    console.log('   - Fecha:', fechaISO);
-    console.log('   - Link Meet:', linkMeet);
-    console.log('   - Etapa ID:', idEtapa);
-    console.log('   - Nombre Asegurado:', nameAsegurado);
-    console.log('   - Teléfono Asegurado:', phoneAsegurado);
+    console.log('📝 Actualizando lead ID:', leadId, '| Nombre:', nombre, '| Etapa:', idEtapa);
 
     // Filtrar campos vacíos, undefined o null
     const customFieldsValues = [];
@@ -299,8 +288,6 @@ async function patchLead(leadId, nombre, email, telefono, tema, fechaISO, linkMe
       ...(customFieldsValues.length > 0 && { custom_fields_values: customFieldsValues })
     }];
 
-    console.log('📤 Enviando payload de actualización:', JSON.stringify(leadPayload, null, 2));
-
     const response = await axios.patch(
       `${config.kommo.baseUrl}/leads`,
       leadPayload,
@@ -314,10 +301,10 @@ async function patchLead(leadId, nombre, email, telefono, tema, fechaISO, linkMe
     );
 
     if (response.status === 200) {
-      console.log('✅ Lead actualizado exitosamente:', response.data);
+      console.log('✅ Lead actualizado exitosamente');
     } else {
       console.error('❌ Error al actualizar lead. Status:', response.status);
-      console.error('📋 Respuesta:', JSON.stringify(response.data, null, 2));
+      console.error('📋 Respuesta:', response.data);
     }
   } catch (err) {
     console.error('❌ Error en patchLead:', err.message);
