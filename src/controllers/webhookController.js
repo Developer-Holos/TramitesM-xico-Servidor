@@ -30,6 +30,10 @@ async function procesarWebhook(payload) {
  * 💼 Procesa eventos de ventas
  */
 async function procesarEventoVentas(payload) {
+  console.log('📋 === DATOS DE CALENDLY (VENTAS) ===');
+  console.log('Payload completo:', JSON.stringify(payload, null, 2));
+  console.log('Questions & Answers:', JSON.stringify(payload.questions_and_answers, null, 2));
+  
   const nombre = payload.name;
   const email = payload.email;
   const telefono = payload.questions_and_answers.find(q => q.question === 'Numero Telefonico')?.answer;
@@ -39,7 +43,14 @@ async function procesarEventoVentas(payload) {
   const fechaLocal = formatoFechaKommo(fecha);
   const idEtapa = config.pipelines.idEtapaCitaVentas;
 
-  console.log('🔍 Buscando lead por teléfono:', telefono);
+  console.log('📊 Datos extraídos:');
+  console.log('  - Nombre:', nombre);
+  console.log('  - Email:', email);
+  console.log('  - Teléfono encontrado:', telefono);
+  console.log('  - Tema:', tema);
+  console.log('  - Link Meet:', linkMeet);
+  console.log('  - Fecha local:', fechaLocal);
+  console.log('🔍 Buscando lead por teléfono:', telefono, '| Pipeline:', config.pipelines.idEmbudoVentas);
 
   // Buscar lead por teléfono en etapa específica
   const leadIdEncontrado = await buscarLeadPorTelefono(telefono, config.pipelines.idEmbudoVentas);
@@ -57,6 +68,10 @@ async function procesarEventoVentas(payload) {
  * 🏥 Procesa eventos de pensión/seguro social
  */
 async function procesarEventoPension(payload) {
+  console.log('📋 === DATOS DE CALENDLY (PENSIÓN) ===');
+  console.log('Payload completo:', JSON.stringify(payload, null, 2));
+  console.log('Questions & Answers:', JSON.stringify(payload.questions_and_answers, null, 2));
+  
   const nombre = payload.name;
   const email = payload.email;
   const telefono = payload.questions_and_answers.find(q => q.question === 'Número de teléfono')?.answer;
@@ -67,7 +82,15 @@ async function procesarEventoPension(payload) {
   const fechaLocal = formatoFechaKommo(fecha);
   const idEtapa = config.pipelines.idEtapaCitaInvestigacionRechazada;
 
-  console.log('🔍 Buscando lead por teléfono:', telefono);
+  console.log('📊 Datos extraídos:');
+  console.log('  - Nombre:', nombre);
+  console.log('  - Email:', email);
+  console.log('  - Teléfono encontrado:', telefono);
+  console.log('  - Nombre asegurado:', nameAsegurado);
+  console.log('  - Teléfono asegurado:', phoneAsegurado);
+  console.log('  - Link Meet:', linkMeet);
+  console.log('  - Fecha local:', fechaLocal);
+  console.log('🔍 Buscando lead por teléfono:', telefono, '| Pipeline:', config.pipelines.idEmbudoPension);
   console.log('📋 Asegurado:', nameAsegurado, '|', phoneAsegurado);
 
   // Buscar lead por teléfono en etapa específica
