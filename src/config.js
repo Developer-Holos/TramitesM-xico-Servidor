@@ -7,10 +7,10 @@ module.exports = {
     baseUrl: process.env.KOMMO_BASE_URL || 'https://isabelchavez.kommo.com/api/v4',
   },
   pipelines: {
-    idEmbudoVentas: parseInt(process.env.ID_EMBUDO_VENTAS || '12372452'),
-    idEmbudoPension: parseInt(process.env.ID_EMBUDO_PENSION || '12372372'),
-    idEtapaCitaVentas: parseInt(process.env.ID_ETAPA_CITA_VENTAS || '95603560'),
-    idEtapaCitaInvestigacionRechazada: parseInt(process.env.ID_ETAPA_CITA_INVESTIGACION_RECHAZADA || '95602916'),
+    idEmbudoVentas: parseInt('12372452'),
+    idEmbudoPension: parseInt('12372372'),
+    idEtapaCitaVentas: parseInt('95603560'),
+    idEtapaCitaInvestigacionRechazada: parseInt('95602916'),
   },
   timezone: {
     offset: parseInt(process.env.TIMEZONE_OFFSET || '-6'),
