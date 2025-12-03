@@ -74,10 +74,11 @@ async function procesarEventoPension(payload) {
   
   const nombre = payload.name;
   const email = payload.email;
-  const telefono = payload.questions_and_answers.find(q => q.question === 'Número de teléfono')?.answer;
+  // Para este evento, el teléfono viene en location (outbound call)
+  const telefono = payload.scheduled_event.location?.location || payload.scheduled_event.location?.join_url;
   const nameAsegurado = payload.questions_and_answers.find(q => q.question === 'Nombre del asegurado')?.answer;
   const phoneAsegurado = payload.questions_and_answers.find(q => q.question === 'Telefono del asegurado')?.answer;
-  const linkMeet = payload.scheduled_event.location?.join_url;
+  const linkMeet = null; // No hay link de Meet, es llamada telefónica
   const fecha = payload.scheduled_event.start_time;
   const fechaLocal = formatoFechaKommo(fecha);
   const idEtapa = config.pipelines.idEtapaCitaInvestigacionRechazada;
@@ -85,7 +86,7 @@ async function procesarEventoPension(payload) {
   console.log('📊 Datos extraídos:');
   console.log('  - Nombre:', nombre);
   console.log('  - Email:', email);
-  console.log('  - Teléfono encontrado:', telefono);
+  console.log('  - Teléfono (de location):', telefono);
   console.log('  - Nombre asegurado:', nameAsegurado);
   console.log('  - Teléfono asegurado:', phoneAsegurado);
   console.log('  - Link Meet:', linkMeet);
