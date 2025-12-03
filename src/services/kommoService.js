@@ -299,8 +299,8 @@ async function patchLead(leadId, nombre, email, telefono, tema, fechaISO, linkMe
     }
   } catch (err) {
     console.error('❌ Error en patchLead:', err.message);
-    if (err.response) {
-      console.error('📋 Detalles del error:', JSON.stringify(err.response.data, null, 2));
+    if (err.response?.data) {
+      console.error('📋 Detalles del error:', err.response.data);
     }
   }
 }
