@@ -118,7 +118,7 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
 
     // Si no existe, crear el contacto
     if (!finalContactId) {
-      console.log('📝 Creando nuevo contacto...');
+      console.log('📝 Creando nuevo contacto:', nombre || 'Sin nombre');
       
       // Filtrar solo campos de contacto que no estén vacíos
       const contactCustomFields = [];
@@ -170,16 +170,7 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
     }
 
     // 3️⃣ Crear el lead usando el contacto encontrado/creado
-    console.log('📝 Creando lead con los siguientes datos:');
-    console.log('   - Nombre:', nombre);
-    console.log('   - Email:', email);
-    console.log('   - Teléfono:', telefono);
-    console.log('   - Tema:', tema);
-    console.log('   - Fecha:', fechaISO);
-    console.log('   - Link Meet:', linkMeet);
-    console.log('   - Etapa ID:', idEtapa);
-    console.log('   - Nombre Asegurado:', nameAsegurado);
-    console.log('   - Teléfono Asegurado:', phoneAsegurado);
+    console.log('📝 Creando lead para:', nombre, '| Etapa:', idEtapa);
 
     // Filtrar campos vacíos, undefined o null
     const customFieldsValues = [];
@@ -240,8 +231,8 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
     }
   } catch (err) {
     console.error('❌ Error en crearLeadNuevo:', err.message);
-    if (err.response) {
-      console.error('📋 Detalles del error:', JSON.stringify(err.response.data, null, 2));
+    if (err.response?.data) {
+      console.error('📋 Detalles del error:', err.response.data);
     }
   }
 }
