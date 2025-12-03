@@ -12,6 +12,7 @@ module.exports = {
     idEtapaCitaVentas: parseInt('95603560'),
     idEtapaCitaInvestigacionRechazada: parseInt('95602916'),
     idEtapaAnalisisCalculo: parseInt('95602924'),
+    idEtapaExplicacionMonto: parseInt('95603384'),
   },
   timezone: {
     offset: parseInt(process.env.TIMEZONE_OFFSET || '-6'),
