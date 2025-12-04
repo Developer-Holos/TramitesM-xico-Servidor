@@ -132,7 +132,7 @@ async function procesarEventoAnalisisCalculo(payload) {
   const linkMeet = null; // No hay link de Meet, es llamada telefónica
   const fecha = payload.scheduled_event.start_time;
   const fechaLocal = formatoFechaKommo(fecha);
-  const idEtapa = config.pipelines.idEtapaAnalisisCalculo;
+  const idEtapa = config.pipelines.idEtapaExplicacionMonto;
 
   console.log('📊 Datos extraídos:');
   console.log('  - Nombre:', nombre);
