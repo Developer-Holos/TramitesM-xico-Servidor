@@ -5,7 +5,15 @@ const config = require('../config');
  * 🔍 Busca un lead por teléfono y etapa
  */
 async function buscarLeadPorTelefono(telefono, pipelineId) {
-  const url = `${config.kommo.baseUrl}/leads?with=contacts&query=${telefono}&filter[pipeline_id][]=${pipelineId}`;
+  if (!telefono) {
+    console.log('⚠️ No se proporcionó teléfono para buscar');
+    return null;
+  }
+
+  const telefonoNormalizado = normalizePhone(telefono);
+  const url = `${config.kommo.baseUrl}/leads?with=contacts&query=${encodeURIComponent(telefonoNormalizado)}&filter[pipeline_id][]=${pipelineId}`;
+
+  console.log('🔍 URL de búsqueda:', url);
 
   try {
     const response = await axios.get(url, {
@@ -15,34 +23,60 @@ async function buscarLeadPorTelefono(telefono, pipelineId) {
       validateStatus: () => true, // No lanzar error en status !== 200
     });
 
-    const data = response.data;
+    console.log('📡 Status de respuesta:', response.status);
 
-    // Verificar si la respuesta está vacía o no tiene leads
-    if (!data || !data._embedded || !data._embedded.leads) {
-      console.log('⚠️ No se encontró ningún lead. Respuesta vacía.');
+    if (response.status !== 200) {
+      console.log('⚠️ Error en la búsqueda. Status:', response.status);
+      console.log('📋 Respuesta:', response.data);
       return null;
     }
 
+    const data = response.data;
+
+    // Verificar si la respuesta está vacía o no tiene leads
+    if (!data || !data._embedded || !data._embedded.leads || data._embedded.leads.length === 0) {
+      console.log('⚠️ No se encontró ningún lead en el pipeline', pipelineId);
+      return null;
+    }
+
+    console.log('📊 Leads encontrados:', data._embedded.leads.length);
+
     // Buscar en los leads devueltos
     for (let lead of data._embedded.leads) {
-      if (!lead._embedded || !lead._embedded.contacts) continue;
+      console.log('🔎 Verificando lead ID:', lead.id, '| Nombre:', lead.name);
+      
+      if (!lead._embedded || !lead._embedded.contacts) {
+        console.log('  ⚠️ Lead sin contactos');
+        continue;
+      }
 
       const contacto = lead._embedded.contacts[0];
-      if (!contacto) continue;
+      if (!contacto) {
+        console.log('  ⚠️ Contacto vacío');
+        continue;
+      }
 
       const contactId = contacto.id;
+      console.log('  📞 Verificando contacto ID:', contactId);
+      
       const contactData = await obtenerContactoPorId(contactId);
 
       if (contactData && contactData.custom_fields_values) {
         const telefonoCampo = contactData.custom_fields_values.find(f => f.field_code === 'PHONE');
         const telefonoContacto = telefonoCampo?.values?.[0]?.value;
 
-        if (telefonoContacto && normalizePhone(telefonoContacto) === normalizePhone(telefono)) {
+        console.log('  📱 Teléfono del contacto:', telefonoContacto);
+        console.log('  🔢 Normalizado contacto:', normalizePhone(telefonoContacto));
+        console.log('  🔢 Normalizado búsqueda:', telefonoNormalizado);
+
+        if (telefonoContacto && normalizePhone(telefonoContacto) === telefonoNormalizado) {
+          console.log('  ✅ ¡Coincidencia encontrada!');
           return lead.id;
         }
       }
     }
 
+    console.log('⚠️ No se encontró coincidencia exacta de teléfono');
     return null;
   } catch (err) {
     console.error('❌ Error en buscarLeadPorTelefono:', err.message);
@@ -222,12 +256,15 @@ async function crearLeadNuevo(nombre, email, telefono, tema, fechaISO, linkMeet,
       }
     );
 
-    if (response.status === 200) {
+    if (response.status === 200 || response.status === 201) {
+      console.log('📋 Respuesta completa:', JSON.stringify(response.data, null, 2));
       const leadId = response.data?._embedded?.leads?.[0]?.id;
       console.log('🆕 ✅ Lead creado exitosamente, ID:', leadId);
+      return leadId;
     } else {
       console.error('❌ Error al crear lead. Status:', response.status);
-      console.error('📋 Respuesta:', response.data);
+      console.error('📋 Respuesta:', JSON.stringify(response.data, null, 2));
+      return null;
     }
   } catch (err) {
     console.error('❌ Error en crearLeadNuevo:', err.message);
